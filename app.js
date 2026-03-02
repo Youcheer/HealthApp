@@ -1419,23 +1419,28 @@ async function deleteRow(store, id) {
 function viewDocument(data, type) {
     let htmlContent = '';
 
-    // Transform standard Google Drive links to direct image links
-    if (data.includes('drive.google.com/file/d/')) {
-        const match = data.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        if (match && match[1]) {
-            data = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    // Google Drive prevents direct <img> embedding, we MUST use /preview in an iframe
+    if (data.includes('drive.google.com')) {
+        let fileId = null;
+        if (data.includes('/d/')) {
+            const match = data.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (match && match[1]) fileId = match[1];
+        } else if (data.includes('id=')) {
+            const match = data.match(/id=([a-zA-Z0-9-_]+)/);
+            if (match && match[1]) fileId = match[1];
         }
-    }
 
-    if (data.startsWith('http')) {
-        if (data.includes('drive.google.com/uc')) {
-            htmlContent = `<img src="${data}" class="max-h-full max-w-full rounded">`;
+        if (fileId) {
+            htmlContent = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-[60vh] rounded bg-transparent border-0"></iframe>`;
         } else {
             htmlContent = `<iframe src="${data}" class="w-full h-[60vh] rounded bg-white"></iframe>`;
         }
+    } else if (data.startsWith('http')) {
+        htmlContent = `<img src="${data}" class="max-h-full max-w-full rounded">`;
     } else {
-        htmlContent = type.startsWith('image') ? `<img src="${data}" class="max-h-full max-w-full rounded">` : `<iframe src="${data}" class="w-full h-[60vh]"></iframe>`;
+        htmlContent = type && type.startsWith('image') ? `<img src="${data}" class="max-h-full max-w-full rounded">` : `<iframe src="${data}" class="w-full h-[60vh]"></iframe>`;
     }
+
     document.getElementById('modalContent').innerHTML = htmlContent;
     document.getElementById('documentModal').classList.remove('hidden');
 }
