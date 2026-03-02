@@ -794,8 +794,8 @@ function populateSettingsForm() {
     if (document.getElementById('setAppPin')) document.getElementById('setAppPin').value = config.appPin || '';
 
     const savedUrl = localStorage.getItem('googleWebAppUrl');
-    if (savedUrl && document.getElementById('googleWebAppUrl')) {
-        document.getElementById('googleWebAppUrl').value = savedUrl;
+    if (document.getElementById('googleWebAppUrl')) {
+        document.getElementById('googleWebAppUrl').value = savedUrl || '';
     }
 
     // Build Dynamic Inner Limit Fields in Settings
@@ -1456,10 +1456,10 @@ async function resetData() {
         await db.claims.clear();
         await db.premiums.clear();
         await db.policyDocs.clear();
-        config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
-        config.timestamp = Date.now();
         localStorage.removeItem('googleWebAppUrl');
-        saveConfig();
+        localStorage.removeItem('policyConfig');
+        const urlInput = document.getElementById('googleWebAppUrl');
+        if (urlInput) urlInput.value = '';
         Swal.fire('Cleared', 'System will now restart.', 'success').then(() => {
             window.location.reload();
         });
