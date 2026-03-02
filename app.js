@@ -122,13 +122,21 @@ let editingPremiumId = null;
 let isPremiumHighRiskOverdue = false;
 
 // --- 3. UI HELPER ---
+function getDisplayYear(policyYear) {
+    let startYear = new Date().getFullYear();
+    if (config.activeDate) {
+        startYear = new Date(config.activeDate).getFullYear();
+    }
+    return (startYear + (parseInt(policyYear) - 1)).toString();
+}
+
 let currentClaimsViewingYear = null;
 let currentRealYear = 1;
 
 function changeClaimsViewingYear(year) {
     currentClaimsViewingYear = parseInt(year);
     document.querySelectorAll('.tableYearDisplay').forEach(el => {
-        el.innerText = currentClaimsViewingYear === currentRealYear ? `${currentClaimsViewingYear} - Current` : currentClaimsViewingYear;
+        el.innerText = currentClaimsViewingYear === currentRealYear ? `${getDisplayYear(currentClaimsViewingYear)} - Current` : getDisplayYear(currentClaimsViewingYear);
     });
     renderClaimsTable();
 }
@@ -144,7 +152,7 @@ async function populateClaimsYearSelect() {
     yearsWithClaims.sort((a, b) => a - b);
 
     select.innerHTML = yearsWithClaims.map(y => {
-        let text = `Year ${y}`;
+        let text = `${getDisplayYear(y)}`;
         if (y === currentRealYear) text += ` (Current)`;
         return `<option value="${y}">${text}</option>`;
     }).join('');
@@ -209,7 +217,7 @@ async function initApp() {
     const dashYearSelect = document.getElementById('dashYearSelect');
     if (dashYearSelect) {
         dashYearSelect.innerHTML = Array.from({ length: config.policyTerm }, (_, i) => {
-            let text = `Year ${i + 1}`;
+            let text = `${getDisplayYear(i + 1)}`;
             if (i + 1 === currentRealYear) text += ` (Current)`;
             return `<option value="${i + 1}">${text}</option>`;
         }).join('');
@@ -223,7 +231,7 @@ async function initApp() {
     }
 
     // Update Select Dropdowns dynamically based on Policy Term
-    const yearOptions = Array.from({ length: config.policyTerm }, (_, i) => `<option value="${i + 1}">Year ${i + 1}</option>`).join('');
+    const yearOptions = Array.from({ length: config.policyTerm }, (_, i) => `<option value="${i + 1}">${getDisplayYear(i + 1)}</option>`).join('');
     document.getElementById('premPolicyYear').innerHTML = yearOptions;
 
     // Populate Form Dropdown Categories dynamically Based on Inner limits + Core ones
@@ -243,7 +251,7 @@ async function initApp() {
 
     await populateClaimsYearSelect();
     document.querySelectorAll('.tableYearDisplay').forEach(el => {
-        el.innerText = currentClaimsViewingYear === currentRealYear ? `${currentClaimsViewingYear} - Current` : currentClaimsViewingYear;
+        el.innerText = currentClaimsViewingYear === currentRealYear ? `${getDisplayYear(currentClaimsViewingYear)} - Current` : getDisplayYear(currentClaimsViewingYear);
     });
 
     // Actual Premiums
@@ -721,7 +729,7 @@ async function renderPremiumsTable() {
         tr.innerHTML = `
                 <td data-label="Due Date" class="px-6 py-3 text-slate-600 text-xs" > ${p.dueDate}</td>
                     <td data-label="Paid Date" class="px-6 py-3 text-xs font-semibold ${isPaidLate ? 'text-amber-600' : 'text-green-600'}">${p.paidDate}</td>
-                    <td data-label="Year" class="px-6 py-3 text-slate-800 text-xs text-center"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium border border-blue-100">Year ${p.policyYear}</span></td>
+                    <td data-label="Year" class="px-6 py-3 text-slate-800 text-xs text-center"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded font-medium border border-blue-100">${getDisplayYear(p.policyYear)}</span></td>
                     <td data-label="Amount" class="px-6 py-3 text-right font-bold text-slate-800">${formatRs(p.amount)}</td>
                     <td class="px-6 py-3 text-center whitespace-nowrap actions-cell">
                         <button onclick="editRow('premiums', ${p.id})" class="text-indigo-500 hover:text-indigo-700 mr-3 p-1 hover:bg-indigo-50 rounded" title="Edit"><i class="fa-solid fa-pen text-lg"></i></button>
@@ -1344,7 +1352,7 @@ async function renderBenefitsReport() {
 
     // Then Each Year
     yrs.forEach(y => {
-        html += renderBlock(`Policy Year ${y}`, yearlyData[y], false);
+        html += renderBlock(`${getDisplayYear(y)}`, yearlyData[y], false);
     });
 
     container.innerHTML = html;
@@ -1878,7 +1886,7 @@ async function exportClaimsPDF() {
 
         groupedClaims[c.policyYear].rows.push([
             c.date,
-            `Year ${c.policyYear} `,
+            `${getDisplayYear(c.policyYear)} `,
             catText,
             c.hospital,
             formatRs(c.amount)
@@ -1894,7 +1902,7 @@ async function exportClaimsPDF() {
     yearsDesc.forEach(year => {
         tableData.push(...groupedClaims[year].rows);
         tableData.push([
-            { content: `Total for Year ${year}`, colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [71, 85, 105], lineWidth: { top: 0.5, bottom: 0.5 }, lineColor: [203, 213, 225] } },
+            { content: `Total for ${getDisplayYear(year)}`, colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [71, 85, 105], lineWidth: { top: 0.5, bottom: 0.5 }, lineColor: [203, 213, 225] } },
             { content: formatRs(groupedClaims[year].total), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [13, 148, 136], lineWidth: { top: 0.5, bottom: 0.5 }, lineColor: [203, 213, 225] } }
         ]);
         // Add a visual separator line / blank space
@@ -1942,7 +1950,7 @@ async function exportPremiumsPDF() {
         groupedPrems[p.policyYear].rows.push([
             p.dueDate,
             p.paidDate,
-            `Year ${p.policyYear} `,
+            `${getDisplayYear(p.policyYear)} `,
             formatRs(p.amount)
         ]);
         groupedPrems[p.policyYear].total += rowAmount;
@@ -1955,7 +1963,7 @@ async function exportPremiumsPDF() {
     yearsDesc.forEach(year => {
         tableData.push(...groupedPrems[year].rows);
         tableData.push([
-            { content: `Total for Year ${year}`, colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [71, 85, 105], lineWidth: { top: 0.5, bottom: 0.5 }, lineColor: [191, 219, 254] } },
+            { content: `Total for ${getDisplayYear(year)}`, colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [71, 85, 105], lineWidth: { top: 0.5, bottom: 0.5 }, lineColor: [191, 219, 254] } },
             { content: formatRs(groupedPrems[year].total), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [37, 99, 235], lineWidth: { top: 0.5, bottom: 0.5 }, lineColor: [191, 219, 254] } }
         ]);
         // Add a visual separator line / blank space
@@ -2157,7 +2165,7 @@ async function exportBenefitsPDF() {
 
     const yrs = Object.keys(yearlyData).map(Number).sort((a, b) => b - a);
     yrs.forEach(year => {
-        renderDataToTable(`Policy Year ${year}`, yearlyData[year], false);
+        renderDataToTable(`${getDisplayYear(year)}`, yearlyData[year], false);
     });
 
     doc.save(`Benefits_Report_${config.policyName || 'System'}.pdf`);
