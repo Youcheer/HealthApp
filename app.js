@@ -1458,8 +1458,11 @@ async function resetData() {
         await db.policyDocs.clear();
         config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
         config.timestamp = Date.now();
-        saveConfig(); initApp(); switchTab('dashboard');
-        Swal.fire('Cleared', '', 'success');
+        localStorage.removeItem('googleWebAppUrl');
+        saveConfig();
+        Swal.fire('Cleared', 'System will now restart.', 'success').then(() => {
+            window.location.reload();
+        });
     }
 }
 
