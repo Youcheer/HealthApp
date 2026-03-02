@@ -1418,8 +1418,21 @@ async function deleteRow(store, id) {
 }
 function viewDocument(data, type) {
     let htmlContent = '';
+
+    // Transform standard Google Drive links to direct image links
+    if (data.includes('drive.google.com/file/d/')) {
+        const match = data.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+            data = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        }
+    }
+
     if (data.startsWith('http')) {
-        htmlContent = `<iframe src="${data}" class="w-full h-[60vh] rounded"></iframe>`;
+        if (data.includes('drive.google.com/uc')) {
+            htmlContent = `<img src="${data}" class="max-h-full max-w-full rounded">`;
+        } else {
+            htmlContent = `<iframe src="${data}" class="w-full h-[60vh] rounded bg-white"></iframe>`;
+        }
     } else {
         htmlContent = type.startsWith('image') ? `<img src="${data}" class="max-h-full max-w-full rounded">` : `<iframe src="${data}" class="w-full h-[60vh]"></iframe>`;
     }

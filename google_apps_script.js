@@ -48,8 +48,8 @@ function doPost(e) {
                   var file = folder.createFile(blob);
                   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-                  // Replace Base64 string with Drive Link
-                  claim.fileData = file.getUrl();
+                  // Replace Base64 string with Drive Link (Raw content link for embedding)
+                  claim.fileData = "https://drive.google.com/uc?export=view&id=" + file.getId();
                }
             }
          }
