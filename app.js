@@ -166,6 +166,7 @@ async function populateClaimsYearSelect() {
 
 function changeViewingYear(year) {
     config.activeYear = parseInt(year);
+    config.timestamp = Date.now();
     saveConfig();
     currentClaimsViewingYear = config.activeYear;
     initApp();
@@ -908,7 +909,8 @@ document.getElementById('settingsForm').addEventListener('submit', (e) => {
         overdueRiskDays: parseInt(document.getElementById('setOverdueRiskDays') ? document.getElementById('setOverdueRiskDays').value : 26) || 26,
         noClaimBonusPct: parseFloat(document.getElementById('setNoClaimBonusPct') ? document.getElementById('setNoClaimBonusPct').value : 25) || 25,
         appPin: newPin,
-        innerLimits: newInnerLimits // Assigned Dynamic limits
+        innerLimits: newInnerLimits, // Assigned Dynamic limits
+        timestamp: Date.now() // Track when config was updated
     };
 
     saveConfig();
@@ -1458,7 +1460,9 @@ async function resetData() {
         await db.claims.clear();
         await db.premiums.clear();
         await db.policyDocs.clear();
-        config = DEFAULT_CONFIG; saveConfig(); initApp(); switchTab('dashboard');
+        config = DEFAULT_CONFIG;
+        config.timestamp = Date.now();
+        saveConfig(); initApp(); switchTab('dashboard');
         Swal.fire('Cleared', '', 'success');
     }
 }
@@ -1753,6 +1757,31 @@ async function autoBackgroundPull() {
         };
 
         let hasUpdates = false;
+
+        if (parsedData.config) {
+            const localConfigStr = localStorage.getItem('policyConfig');
+            const remoteConfigStr = JSON.stringify(parsedData.config);
+
+            if (localConfigStr !== remoteConfigStr) {
+                // To avoid older local config overwriting newer remote config, check timestamp if available
+                const localTimestamp = config.timestamp || 0;
+                const remoteTimestamp = parsedData.config.timestamp || 0;
+
+                if (remoteTimestamp >= localTimestamp) {
+                    config = parsedData.config;
+                    // Apply defaults
+                    for (let key in DEFAULT_CONFIG) if (config[key] === undefined) config[key] = DEFAULT_CONFIG[key];
+
+                    localStorage.setItem('policyConfig', JSON.stringify(config));
+
+                    const activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && activeTab.id === 'tab-settings' && typeof populateSettingsForm === 'function') {
+                        populateSettingsForm();
+                    }
+                    hasUpdates = true;
+                }
+            }
+        }
 
         if (parsedData.claims && parsedData.claims.length > 0) {
             for (let c of parsedData.claims) {
